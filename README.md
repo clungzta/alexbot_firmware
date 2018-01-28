@@ -18,7 +18,7 @@ Velocity commands from a joystick are used as Vin input to the SEPF Based Collis
 
 AssistedTeleopController() avoids obstacles by fusing user command input with repulsion vectors of objects detected in the LIDAR scan.
 ### 4. Zombie mode
-Zombie Mode is intended for Homing the robot to the docking station for a critical recharge even when the main computer (i.e. ROS localisation and navigation stack) is off, to conserve power.
+Zombie Mode is intended for Homing the robot to the docking station for a critical recharge even when the main computer (i.e. ROS localisation and navigation stack) is off.
 
 ![alt text](https://cdn4.iconfinder.com/data/icons/miscellaneous-icons-3/200/monster_zombie_hand-256.png "Zombie")
 
