@@ -20,7 +20,7 @@ AssistedTeleopController() avoids obstacles by fusing user command input with re
 ### 4. Zombie mode
 Zombie Mode is intended for Homing the robot to the docking station for a critical recharge even when the main computer (i.e. ROS localisation and navigation stack) is off, to conserve power.
 
-![](https://cdn4.iconfinder.com/data/icons/miscellaneous-icons-3/200/monster_zombie_hand-256.png | width=100)
+![alt text](https://cdn4.iconfinder.com/data/icons/miscellaneous-icons-3/200/monster_zombie_hand-256.png "Zombie")
 
 Zombie mode gets enabled when either:
 the batteries reach a low level (detected by coulomb counter), and the HOMING_INSTINCTS flag has been enabled by ROS.
