@@ -1,8 +1,21 @@
 # alexbot_firmware
 V2.0 Firmware for Alexbot. https://hackaday.io/project/26127-alexbot  
-Intended for Dual-Core ESP32, Currently Under Development!
+Intended target for Dual-Core ESP32 low-cost embedded platform.
+
+Currently Under Development!
   
----      
+---
+
+Hardware Used:
+
+- Adafruit HUZZAH32 - ESP32 (240 MHz dual core Tensilica LX6 microcontroller w/ Bluetooth + Wi-Fi) 
+- Adafruit Ultimate GPS
+- Adafruit TFT FeatherWing - 3.5 480x320 Touchscreen
+- Sabertooth 2x25A Regenerative Motor Controller
+- Triple LS7366R Quadrature Encoder Buffer
+- BNO-055 IMU
+
+---
  
 ## State Machine:
 ### 0. Halt:
