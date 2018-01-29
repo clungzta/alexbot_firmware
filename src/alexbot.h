@@ -52,10 +52,10 @@
 // If a command from the RC or AI has not been recieved within WATCHDOG_TIMEOUT ms, will be switched to HALT state.
 #define WATCHDOG_TIMEOUT 250
 
-class Alexbot
+class AlexbotController
 {
   public:
-    Alexbot()
+    AlexbotController()
     {
         // Initialise pins
         pinMode(FAILSAFE_LED_PIN, OUTPUT);

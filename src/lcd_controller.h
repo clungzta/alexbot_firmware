@@ -62,7 +62,7 @@ void TFTController::_display_value(String value_name, String value, uint16_t val
     tft.println(value);
 }
 
-unsigned long TFTController::update(String state_name, int8_t comms_status, double x_velocity_cmd, double theta_cmd, double battery_voltage)
+unsigned long TFTController::update(String state_name, int8_t comms_status, double loop_rate, double x_velocity_cmd, double theta_cmd, double battery_voltage)
 {
     tft.fillScreen(HX8357_BLACK);
     unsigned long start = micros();
@@ -88,6 +88,7 @@ unsigned long TFTController::update(String state_name, int8_t comms_status, doub
         _display_value("ROS Communication Status", "Error!", HX8357_RED);
     }
 
+    _display_value("Loop Rate", String(loop_rate, 2) + 'Hz');
     _display_value("X Velocity", String(x_velocity_cmd, 2) + 'ms');
     _display_value("Theta", String(x_velocity_cmd, 2) + 'deg/s');
     _display_value("Battery Voltage", String(x_velocity_cmd, 2) + 'V');
