@@ -72,7 +72,7 @@ https://sites.google.com/site/mechatronicsguy/robot-vac-hack .
 ---  
 ### Acknowledgements
 
-Firmware originally forked and repurposed from "Linda", code for the self-driving car by [The Robotics Club](https://www.theroboticsclub.org/)
+Firmware was originally forked and repurposed from "Linda", code for the self-driving car by [The Robotics Club](https://www.theroboticsclub.org/)
 
 ### References
 

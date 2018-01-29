@@ -34,7 +34,7 @@ struct WheelEncoderFeedback
 class WheelEncoderLS7366
 {
     public:
-        LS7366Encoder(uint8_t encoder_id, uint8_t chip_select_pin, double counts_per_rev, double wheel_radius);
+        WheelEncoderLS7366(uint8_t encoder_id, uint8_t chip_select_pin, double counts_per_rev, double wheel_radius);
         WheelEncoderFeedback get_update();
         void reset_encoder();
 

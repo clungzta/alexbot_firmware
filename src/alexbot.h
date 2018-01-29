@@ -1,5 +1,6 @@
 #include "teleop_controller.h"
 #include "motor_velocity_controller.h"
+#include "zombie_mode.h"
 
 /***************************** STATE DEFINITIONS **************************************/
 // These are the names of the states that the car can be in:
@@ -31,26 +32,37 @@
 // Can also adjust config parameters ON the Microcontroller
 #define SERIAL_COMMAND_STATE    4
 
-/*************************************************************************************/
-
 /**************************** ARDUINO PIN DEFINITIONS ********************************/
 #define FAILSAFE_PIN       10   // To emergency stop switch
 #define FAILSAFE_LED_PIN   13   // OUTPUT TO LED ON THE ARDUINO BOARD
 
 // Motor driver Pins (UART Serial)
-#define MOTOR_CONTROLLER_TX // S1 on the sabertooth 2x25A goes to pin 2
+#define MOTOR_CONTROLLER_TX 2   // S1 on the sabertooth 2x25A goes to pin 2
 
-/************************************************************************************/
+#define LEFT_ENCODER_CS_PIN  3
+#define RIGHT_ENCODER_CS_PIN 4
+
+// what's the name of the hardware serial port for the GPS?
+#define GPSSerial Serial1
 
 /************************************** CONFIG *************************************/
 
 // Maximum allowable power to the motors
 #define DRIVE_MOTORS_MAX_POWER 60
 
+// FIXME: Wheel and encoder parameters
+#define ENCODER_COUNTS_PER_REV 22000
+#define WHEEL_RADIUS 7
+
 /***********************************************************************************/
+
+#define LEFT_MOTOR_ID  0
+#define RIGHT_MOTOR_ID 1
 
 // If a command from the RC or AI has not been recieved within WATCHDOG_TIMEOUT ms, will be switched to HALT state.
 #define WATCHDOG_TIMEOUT 250
+
+Adafruit_GPS GPS(&GPSSerial);
 
 class AlexbotController
 {
@@ -62,29 +74,33 @@ class AlexbotController
         pinMode(FAILSAFE_PIN, INPUT);
     }
 
-    void Init() {
+    void init() {
 
-      // Seperate function for initialising objects
-      // In Arduino, these init calls do not work from the class constructor
+        // Seperate function for initialising objects
+        // In Arduino, these init calls do not work from the class constructor
 
-      // Initialise 9600 baud communication with the Sabertooth Motor Controller
-      SoftwareSerial ST25port(NOT_A_PIN, 2);  // RX on no pin (unused), TX on pin 2 (to S1).
-      ST32port.begin(9600);
+        // Initialise 9600 baud communication with the Sabertooth Motor Controller
+        SoftwareSerial ST25port(NOT_A_PIN, 2);  // RX on no pin (unused), TX on pin 2 (to S1).
+        ST32port.begin(9600);
 
-      sabertooth = new SabertoothSimplified(ST25port);
+        sabertooth = new SabertoothSimplified(ST25port);
 
-      // Initialise Motor Controllers
-      left_motor = new MotorController(
-          "Left motor", sabertooth, 0,
-          BRAKE_ACTUATOR_POSITION_SENSOR_PIN,
-          BRAKE_FULLY_ENGAGED_POSITION, BRAKE_NOT_ENGAGED_POSITION,
-          BRAKE_MOTOR_MAX_POWER);
+        // Initialise Wheel Encoders
+        left_encoder = new WheelEncoderLS7366(LEFT_MOTOR_ID, LEFT_ENCODER_CS_PIN, ENCODER_COUNTS_PER_REV, WHEEL_RADIUS);
+        right_encoder = new WheelEncoderLS7366(RIGHT_MOTOR_ID, RIGHT_ENCODER_CS_PIN, ENCODER_COUNTS_PER_REV, WHEEL_RADIUS);
 
-      right_motor = new MotorController(
-          "Right motor", sabertooth, 1,
-          GEAR_ACTUATOR_POSITION_SENSOR_PIN,
-          DRIVE_GEAR_POSITION, PARK_GEAR_POSITION,
-          GEAR_MOTOR_MAX_POWER);
+        // Initialise Motor Controllers
+        left_motor = new MotorVelocityController(
+            "Left motor", sabertooth, LEFT_MOTOR_ID, left_encoder, DRIVE_MOTORS_MAX_POWER);
+
+        right_motor = new MotorVelocityController(
+            "Right motor", sabertooth, RIGHT_MOTOR_ID, right_encoder, DRIVE_MOTORS_MAX_POWER);
+
+        // init 9600 baud comms with GPS reciever
+        GPS.begin(9600);
+
+        // Request updates on antenna status, comment out to keep quiet
+        GPS.sendCommand(PGCMD_ANTENNA);
     }
 
     void process_velocity_command(double cmd_x_velocity = 0.0, double cmd_theta = 0.0)
@@ -209,8 +225,11 @@ private:
     long last_command_timestamp;
     Servo throttle_servo;
 
-    SabertoothSimplified* sabertooth;
+    SabertoothSimplified *sabertooth;
 
-    MotorController* left_motor;
-    MotorController* right_motor;
+    MotorController *left_motor;
+    MotorController *right_motor;
+
+    WheelEncoderLS7366 *left_encoder;
+    WheelEncoderLS7366 *right_encoder;
 };

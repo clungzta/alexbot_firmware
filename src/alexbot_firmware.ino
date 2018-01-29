@@ -1,3 +1,4 @@
+#include <Adafruit_GPS.h>
 #include <RPLidar.h>
 #include <Streaming.h>
 #include <SoftwareSerial.h>
@@ -150,8 +151,8 @@ void setup()
     // Mutex ("baton") to be passed between cores to syncronise
     baton = xSemaphoreCreateMutex();
 
-    alexbot.Init();
-    alexbot.set_current_state_ID(AI_READY_STATE);
+    alexbot.init();
+    alexbot.set_current_state_ID(HALT_STATE);
 
     tft.init();
 

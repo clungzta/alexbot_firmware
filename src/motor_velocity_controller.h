@@ -1,77 +1,49 @@
-
-
 class MotorVelocityController
 {
     public:
-      MotorController(String _my_name, SabertoothSimplified* _motor_interface,
-          int _motor_id, int _feedback_pin, int _motor_min_pos, int _motor_max_pos, int _motor_max_power,
-          double _Kp = 0.5, double _Ki = 0.0, double _Kd = 0.0);
-          
-      void SetTargetPosition(double target_pos);
-      
+      MotorVelocityController(String my_name, SabertoothSimplified *motor_interface,
+                              int motor_id, WheelEncoderLS7366 *encoder_interface, int motor_max_power,
+                              double Kp = 0.5, double Ki = 0.0, double Kd = 0.0);
 
-      // FIXME: TEST THIS!!!
-      double GetCurrentPosition();
-      boolean isMotorMoving();
-
-      // TODO: Add the option for a callback when the target position is reached???  
+      void SetTargetVelocity(double target_vel);
 
     private:
-      String my_name;
-      SabertoothSimplified* motor_interface;
-      int motor_id;
-      int feedback_pin;
-      double Kp;
-      double Kd;
-      double Ki;
-      int motor_min_pos;
-      int motor_max_pos;
-      int motor_max_power;
-      bool motor_is_moving;
+      String my_name_;
+      SabertoothSimplified *motor_interface_;
+      WheelEncoderLS7366 *encoder_interface_;
+      int motor_id_;
+      int feedback_pin_;
+      double Kp_;
+      double Kd_;
+      double Ki_;
+      int motor_max_power_;
 };
 
-MotorController::MotorController(String _my_name, SabertoothSimplified* _motor_interface,
-    int _motor_id, int _feedback_pin, int _motor_min_pos, int _motor_max_pos, int _motor_max_power,
-    double _Kp = 0.5, double _Ki = 0.0, double _Kd = 0.0)
+MotorVelocityController::MotorVelocityController(String _my_name, SabertoothSimplified *_motor_interface,
+                                                 int _motor_id, WheelEncoderLS7366 *_encoder_interface, int _motor_max_power,
+                                                 double _Kp = 0.5, double _Ki = 0.0, double _Kd = 0.0)
 {
     // init the motor controller here
-    this->my_name         = _my_name;
-    this->motor_id        = _motor_id;
-    this->motor_interface = _motor_interface;
-    this->feedback_pin    = _feedback_pin;
-    this->motor_min_pos   = _motor_min_pos;
-    this->motor_max_pos   = _motor_max_pos;
-    this->motor_max_power = _motor_max_power;
-    this->Kp              = _Kp;
-    this->Ki              = _Ki;
-    this->Kd              = _Kd;
-    this->motor_is_moving = false;
+    this->my_name_           = my_name;
+    this->motor_id_          = motor_id;
+    this->motor_interface_   = motor_interface;
+    this->encoder_interface_ = encoder_interface;
+    this->motor_max_power_   = motor_max_power;
+    this->Kp_                = Kp;
+    this->Ki_                = Ki;
+    this->Kd_                = Kd;
 }
 
-double MotorController::GetCurrentPosition()
-{
-    Serial.print("potpos = ");
-    Serial.println(analogRead(feedback_pin));
-    return double(analogRead(feedback_pin));
-}
-
-void MotorController::SetTargetPosition(double target_pos)
+void MotorVelocityController::SetTargetVelocity(double target_vel)
 {
     // Implementation of a PID controller
-    // TODO add make P and D terms work properly
+    // TODO: add make P and D terms work properly
 
-    if (target_pos < motor_min_pos) {
-        target_pos = motor_min_pos;
-    } else if (target_pos > motor_max_pos) {
-        target_pos = motor_max_pos;
-    }
-
-    //double current_pos = this->GetCurrentPosition();
-    double current_pos = double(analogRead(feedback_pin));
+    double current_vel = this->encoder_interface_->get_update().velocity;
     Serial.print(", current_pos=");
     Serial.print(current_pos);
 
-    double pTerm = current_pos - target_pos;
+    double pTerm = current_vel - target_vel;
     double iTerm = 0.0;
     double dTerm = 0.0;
     double output = int(Kp * pTerm + Ki * iTerm + Kd * dTerm);
@@ -93,20 +65,6 @@ void MotorController::SetTargetPosition(double target_pos)
 
     if (abs(output) > 10)
     {
-        motor_is_moving = true;
-        motor_interface->motor(motor_id, output);
-    }
-    else
-    {
-        motor_is_moving = false;
+        motor_interface_->motor(motor_id, output);
     }
 }
-
-boolean MotorController::isMotorMoving()
-{
-    // Returns true if a motion command is currently in operation
-    //return is_motor_moving();
-    return motor_is_moving;
-}
-
-
