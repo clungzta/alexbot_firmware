@@ -12,10 +12,11 @@
 
 
 /************************ ARDUINO PIN DEFINITIONS ********************************/
+#define FAILSAFE_PIN       10 // RC PIN 7
+
 // PWM input pins from RC Reciever
 #define RC_ENGINE_START_PWM_PIN             11 // RC PIN 8
 #define RC_IGNITION_PWM_PIN                 10 // RC PIN 7
-#define RC_FAILSAFE_PIN    RC_IGNITION_PWM_PIN // RC PIN 7
 #define THROTTLE_PWM_PIN                     5 // RC PIN 1
 #define STEERING_PWM_PIN                     6 // RC PIN 2
 #define THROTTLE_SERVO_PIN                   3 // THROTTLE SERVO MOTOR SIGNAL
@@ -115,10 +116,10 @@
 #define WATCHDOG_TIMEOUT 250
 
 
-class Linda
+class Alexbot
 {
   public:
-    Linda()
+    Alexbot()
     {
         // Initialise pins
         // Initialise class member variables
@@ -129,7 +130,7 @@ class Linda
         pinMode(IGNITION_RELAY_PIN, OUTPUT);
         digitalWrite(IGNITION_RELAY_PIN, LOW);
 
-        pinMode(RC_FAILSAFE_PIN, INPUT);
+        pinMode(FAILSAFE_PIN, INPUT);
 
         lastCommandTimestamp = 0.0;
         x_velocity = 0.0;
@@ -319,7 +320,7 @@ class Linda
         Serial.println("Processing command");
 
         // Will be changed into the HALT state if it is not safe to drive.
-        //checkFailsafes();
+        //check_failsafes();
 
         // State Machine
         switch (currentStateID)
@@ -580,37 +581,35 @@ class Linda
         return (float)pwm_time;
     }
 
-    bool checkFailsafes()
+    bool check_failsafes()
     {
         // This function will check all failsafes
         // If it is not safe to drive: the car will be switched to HALT_STATE
         // Pin 13 will be ON when it is safe to drive, otherwise OFF.
 
         // The failsafes include: a watchdog timer (i.e. an automatic shutdown if a command hasn't been recieved within 250ms)
-        // Also included is PWM switch from the RC reciever.
-
-        // Note that: the RC PWM switch failsafe should be connected in series with the emergency stop switch at the rear of the car
+        // Also included is a hardware switch.
 
         Serial.println("Checking failsafes!");
-        bool watchdogValid = ((millis() - lastCommandTimestamp) < WATCHDOG_TIMEOUT);
-        bool rcFailsafeValid = read_pwm_value(RC_FAILSAFE_PIN) >= 0.5;
+        bool watchdog_valid = ((millis() - lastCommandTimestamp) < WATCHDOG_TIMEOUT);
+        bool failsafe_switch_engaged = digitalRead(FAILSAFE_PIN);
 
-        Serial.print("Dutycycle for failsafe=");
-        Serial.print(read_pwm_value(RC_FAILSAFE_PIN));
+        Serial.print("failsafe_switch_engaged=");
+        Serial.print(failsafe_switch_engaged);
 
         Serial.print(", watchdog_valid=");
-        Serial.println(watchdogValid);
+        Serial.println(watchdog_valid);
 
-        bool safeToDrive = (watchdogValid && rcFailsafeValid);
+        bool safe_to_drive = (watchdog_valid && failsafe_switch_engaged);
 
-        if (!safeToDrive)
+        if (!safe_to_drive)
         {
             set_current_state_ID(HALT_STATE);
         }
 
-        digitalWrite(FAILSAFE_LED_PIN, safeToDrive);
+        digitalWrite(FAILSAFE_LED_PIN, safe_to_drive);
 
-        return safeToDrive;
+        return safe_to_drive;
     }
 
     void send_throttle_command(int throttle_command)
