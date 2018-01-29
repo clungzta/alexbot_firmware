@@ -1,18 +1,38 @@
-#include <Servo.h>
-
+#include "teleop_controller.h"
 #include "motor_controller.h"
 
-// These are the names of the states that the car can be in
-#define HALT_STATE         0
-#define COAST_STATE        1
-#define IGNITION_STATE     2
-#define ENGINE_START_STATE 3
-#define RC_TELEOP_STATE    4
-#define AI_READY_STATE     5
+/***************************** STATE DEFINITIONS **************************************/
+// These are the names of the states that the car can be in:
 
+// SLEEP_STATE: Microcontroller enters deep sleep to conserve power
+// Main computer gets turned off
+// In this state: the Wi-Fi is polled occasionally to check whether the robot should "wake up" and do something
+#define SLEEP_STATE             0
+
+// HALT_STATE: Microcontroller in normal state, robot motor contollers disabled
+// Main computer can be either on or off
+#define HALT_STATE              1
+
+// BLUETOOTH_COMMAND_STATE: For use with Bluetooth Joystick android app
+// (https://play.google.com/store/apps/details?id=org.projectproto.btjoystick)
+// Main computer can be either on or off
+#define BLUETOOTH_TELEOP_STATE  2
+
+// ZOMBIE_STATE: "Zombie Mode" is intended for Homing the robot to its docking station for a critical battery recharge
+// Main computer gets turned off to conserve ~35W of power.
+// Therefore: all localisation and navigation is performed ONBOARD OF THE ESP32
+// See README.md for more info about ZOMBIE_MODE
+#define ZOMBIE_STATE            3
+
+// SERIAL_COMMAND_STATE: for use with ROS or other serial driver
+// Receives and processes commands, including velocity command
+// Can also adjust config parameters on the Microcontroller
+#define SERIAL_COMMAND_STATE    4
+
+/*************************************************************************************/
 
 /************************ ARDUINO PIN DEFINITIONS ********************************/
-#define FAILSAFE_PIN       10 // RC PIN 7
+#define FAILSAFE_PIN       10   // To emergency stop switch
 
 // PWM input pins from RC Reciever
 #define RC_ENGINE_START_PWM_PIN             11 // RC PIN 8
