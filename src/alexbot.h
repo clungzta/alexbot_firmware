@@ -101,6 +101,8 @@ class AlexbotController
 
         // Request updates on antenna status, comment out to keep quiet
         GPS.sendCommand(PGCMD_ANTENNA);
+
+        zombie_controller = new ZombieController(&GPS);
     }
 
     void process_velocity_command(double cmd_x_velocity = 0.0, double cmd_theta = 0.0)
@@ -232,4 +234,6 @@ private:
 
     WheelEncoderLS7366 *left_encoder;
     WheelEncoderLS7366 *right_encoder;
+
+    ZombieController *zombie_controller;
 };
