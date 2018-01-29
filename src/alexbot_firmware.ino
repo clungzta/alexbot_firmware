@@ -1,5 +1,6 @@
-#include <SabertoothSimplified.h>
+#include <Streaming.h>
 #include <SoftwareSerial.h>
+#include <SabertoothSimplified.h>
 
 #include "lcd_controller.h"
 #include "serial_command.h"

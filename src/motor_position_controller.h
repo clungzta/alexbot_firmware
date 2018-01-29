@@ -1,6 +1,6 @@
 
 
-class MotorController
+class MotorPositionController
 {
     public:
       MotorController(String _my_name, SabertoothSimplified* _motor_interface,

@@ -63,7 +63,7 @@ Velocity TeleopController::process_command(double lin_vel, double ang_vel)
     {
         // Apply scaling and constraints
         outvel.linear = constrain(_lin_vel_scaling_factor * lin_vel, -TELEOP_MAX_LIN_VEL, TELEOP_MAX_LIN_VEL);
-        outvel.linear = constrain(_ang_vel_scaling_factor * ang_vel, -TELEOP_MAX_ANG_VEL, TELEOP_MAX_ANG_VEL);
+        outvel.angular = constrain(_ang_vel_scaling_factor * ang_vel, -TELEOP_MAX_ANG_VEL, TELEOP_MAX_ANG_VEL);
     }
     else if (_state_id == SEPF_ASSISTED_TELEOP_MODE)
     {
