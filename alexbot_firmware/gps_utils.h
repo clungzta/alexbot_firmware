@@ -1,6 +1,14 @@
+struct GPSCoords
+{
+    double lat;
+    double lon;
+};
 
 // radius of Earth in m
 #define R 6371000
+
+#define RAD(v) ((v) * PI / 180.0)
+#define DEG(v) ((v) * 180.0 / PI)
 
 // lat/lon and result in radians
 double compute_bearing(double i_lat, double i_lon, double f_lat, double f_lon) {

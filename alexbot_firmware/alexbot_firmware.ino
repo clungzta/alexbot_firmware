@@ -1,7 +1,12 @@
+#include <Wire.h>
+
+// // FIXME!
+// #define BUFFER_LENGTH	32
+// #include <Pozyx.h>
+// #include <Pozyx_definitions.h>
 #include <Adafruit_GPS.h>
 #include <RPLidar.h>
-#include <Streaming.h>
-#include <SoftwareSerial.h>
+//#include <SoftwareSerial.h>
 #include <SabertoothSimplified.h>
 
 #include "lcd_controller.h"
@@ -17,7 +22,7 @@ SemaphoreHandle_t baton;
 
 AlexbotController alexbot;
 SerialCommand sc;
-TFTController tft;
+TFTController touchscreen;
 RPLidar lidar;
 
 double measured_loop_rate;
@@ -27,7 +32,7 @@ double measured_loop_rate;
  * 
  * @param parameter, pointer is passed 
  */
-void main_task(void *parameter)
+void main_task_func(void *parameter)
 {
   String taskMessage = "main_task running on core ";
   taskMessage = taskMessage + xPortGetCoreID();
@@ -36,7 +41,7 @@ void main_task(void *parameter)
   // This loop runs continuously on core 0
   while (true)
   {
-
+    unsigned long loop_start = millis();
     Serial.println("main_task at beginning of loop");
 
     // Take the Sephamore "baton" (defined globally)
@@ -59,8 +64,9 @@ void main_task(void *parameter)
     // Set Velocity
     if (sc.message_type == 'V')
     {
-      Serial << "Processing Velocity command from serial port on core: " << xPortGetCoreID() << endl;
-      alexbot.process_command(sc.message_data1, sc.message_data2);
+      Serial.print("Processing Velocity command from serial port on core: ");
+      Serial.println(xPortGetCoreID());
+      alexbot.process_velocity_command(sc.message_data1, sc.message_data2);
     }
 
     // Let go of the baton (so the other core can do some stuff)
@@ -71,7 +77,6 @@ void main_task(void *parameter)
     delay(50);
 
     // Can adjust global variables from the loop
-    loop_counter++;
 
     measured_loop_rate = 1000.0 / double(millis() - loop_start);
   }
@@ -82,7 +87,7 @@ void main_task(void *parameter)
  * 
  * @param parameter, pointer is passed 
  */
-void auxillary_task(void *parameter)
+void auxillary_task_func(void *parameter)
 {
   String taskMessage = "auxillary_task running on core ";
   taskMessage = taskMessage + xPortGetCoreID();
@@ -128,7 +133,10 @@ void auxillary_task(void *parameter)
     if (millis() % LCD_REFRESH_INTERVAL == 0)
     {
       Serial.println("auxillary_task: Updating LCD");
-      tft.update(String(alexbot.getcurrentStateID()), alexbot.check_failsafes(), measured_loop_rate, -1.0, -1.0, -1.0, -1.0);
+      String current_state_id_str = String(alexbot.get_current_state_ID());
+
+      int8_t serial_comms_status = 1;
+      touchscreen.update(current_state_id_str, serial_comms_status, alexbot.check_failsafes(), measured_loop_rate, -1.0, -1.0, -1.0);
     }
 
     // Let go of the baton (so the other core can do some stuff)
@@ -139,13 +147,15 @@ void auxillary_task(void *parameter)
     delay(50);
 
     // Can adjust global variables from the loop
-    loop_counter++;
+
   }
 }
 
 void setup()
 {
     Serial.begin(115200);
+
+    
     Serial.println("Initialising!");
 
     // Mutex ("baton") to be passed between cores to syncronise
@@ -154,11 +164,11 @@ void setup()
     alexbot.init();
     alexbot.set_current_state_ID(HALT_STATE);
 
-    tft.init();
+    touchscreen.init();
 
     // mainControlLoop handles higher priority functions, including the motor control loop
     xTaskCreatePinnedToCore(
-        task_1_code,    /* Task function. */
+        main_task_func, /* Task function. */
         "Control Loop", /* String with name of task. */
         5000,           /* Stack size in words. */
         NULL,           /* Parameter passed as input of the task */
@@ -173,13 +183,13 @@ void setup()
 
     // mainControlLoop handles lower priority functions, including reading from the LIDAR, updating the TFT LCD and parsing GPS
     xTaskCreatePinnedToCore(
-        task_2_code,      /* Task function. */
-        "Auxillary Loop", /* String with name of task. */
-        5000,             /* Stack size in words. */
-        NULL,             /* Parameter passed as input of the task */
-        50,               /* Priority of the task. */
-        &Task2,           /* Task handle. */
-        1);               /* Core ID to execute on. */
+        auxillary_task_func, /* Task function. */
+        "Auxillary Loop",    /* String with name of task. */
+        5000,                /* Stack size in words. */
+        NULL,                /* Parameter passed as input of the task */
+        50,                  /* Priority of the task. */
+        &Task2,              /* Task handle. */
+        1);                  /* Core ID to execute on. */
 
     Serial.print("Setup: created Task2 with priority = ");
     Serial.println(uxTaskPriorityGet(Task2));

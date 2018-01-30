@@ -70,5 +70,5 @@ Velocity TeleopController::process_command(double lin_vel, double ang_vel)
         Serial.println("SEPF Assisted Teleop Not Yet Implemented! Ignoring Command...");
     }
 
-    return outvel
+    return outvel;
 }

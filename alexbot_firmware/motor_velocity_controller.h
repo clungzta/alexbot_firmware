@@ -3,7 +3,7 @@ class MotorVelocityController
     public:
       MotorVelocityController(String my_name, SabertoothSimplified *motor_interface,
                               int motor_id, WheelEncoderLS7366 *encoder_interface, int motor_max_power,
-                              double Kp = 0.5, double Ki = 0.0, double Kd = 0.0);
+                              double Kp, double Ki, double Kd);
 
       void SetTargetVelocity(double target_vel);
 
@@ -19,9 +19,9 @@ class MotorVelocityController
       int motor_max_power_;
 };
 
-MotorVelocityController::MotorVelocityController(String _my_name, SabertoothSimplified *_motor_interface,
-                                                 int _motor_id, WheelEncoderLS7366 *_encoder_interface, int _motor_max_power,
-                                                 double _Kp = 0.5, double _Ki = 0.0, double _Kd = 0.0)
+MotorVelocityController::MotorVelocityController(String my_name, SabertoothSimplified *motor_interface,
+                                                 int motor_id, WheelEncoderLS7366 *encoder_interface, int motor_max_power,
+                                                 double Kp = 0.5, double Ki = 0.0, double Kd = 0.0)
 {
     // init the motor controller here
     this->my_name_           = my_name;
@@ -39,32 +39,32 @@ void MotorVelocityController::SetTargetVelocity(double target_vel)
     // Implementation of a PID controller
     // TODO: add make P and D terms work properly
 
-    double current_vel = this->encoder_interface_->get_update().velocity;
-    Serial.print(", current_pos=");
-    Serial.print(current_pos);
+    double current_vel = encoder_interface_->get_update().velocity;
+    Serial.print(", current_vel=");
+    Serial.print(current_vel);
 
     double pTerm = current_vel - target_vel;
     double iTerm = 0.0;
     double dTerm = 0.0;
-    double output = int(Kp * pTerm + Ki * iTerm + Kd * dTerm);
+    double output = int(Kp_ * pTerm + Ki_ * iTerm + Kd_ * dTerm);
 
-    if ( output < -1 * motor_max_power ) {
-      output = -1 * motor_max_power;
-    } else if ( output > motor_max_power ) {
-      output = motor_max_power;
+    if ( output < -1 * motor_max_power_ ) {
+      output = -1 * motor_max_power_;
+    } else if ( output > motor_max_power_ ) {
+      output = motor_max_power_;
     }
 
     Serial.println("");
-    Serial.print(my_name);
+    Serial.print(my_name_);
     Serial.print(", motor ID: ");
-    Serial.print(motor_id);
+    Serial.print(motor_id_);
     Serial.print(", output=");
     Serial.print(output);
-    Serial.print(", target_pos=");
-    Serial.print(target_pos);
+    Serial.print(", target_vel=");
+    Serial.print(target_vel);
 
     if (abs(output) > 10)
     {
-        motor_interface_->motor(motor_id, output);
+        motor_interface_->motor(motor_id_, output);
     }
 }

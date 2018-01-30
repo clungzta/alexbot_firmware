@@ -40,7 +40,7 @@ class SabertoothSimplified
 {
 public:
   /*!
-  Initializes a new instance of the SabertoothSimplified class.
+  Initializes of the SabertoothSimplified class instance.
   The Arduino TX serial port is used.
   */
   SabertoothSimplified();

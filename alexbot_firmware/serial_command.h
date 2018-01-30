@@ -23,7 +23,7 @@ class SerialCommand
 
 		SerialCommand();
 		void ReadData();
-		void Reset();
+		void reset();
 
 		private:
 			String cmd_string;
@@ -37,7 +37,7 @@ class SerialCommand
 SerialCommand::SerialCommand()
 {
   Serial.begin(115200);
-  Reset();
+  reset();
 }
     
 void SerialCommand::ReadData()
@@ -61,7 +61,7 @@ void SerialCommand::ReadData()
     cmd_string += (char)read_byte;
     curr_pos++;
     if ( curr_pos >= MAX_CHARS ) {
-      Reset();
+      reset();
     }
     return;
   }
@@ -69,7 +69,7 @@ void SerialCommand::ReadData()
   // Once we receive our MESSAGE_END, then
   // validate we have a valid message packet
   if ( ! haveValidMessage() ) {
-    Reset();
+    reset();
     return;
   }
 
@@ -91,7 +91,7 @@ void SerialCommand::ReadData()
   }
 
   if ( ! found ) {
-    Reset();
+    reset();
     return;
   }
 
@@ -100,7 +100,8 @@ void SerialCommand::ReadData()
   {
     if ( ! ( isDigit( cmd_string.charAt(q) ) || cmd_string.charAt(q) == '.' ) ) {
       // If the char is a comma, then parse the data we have
-      if ( cmd_string.charAt(q) == NULL ) {
+      // if ( cmd_string.charAt(q) == NULL )
+      if ( ! cmd_string.charAt(q) ) {
         message_data2 = cmd_string.substring(p + 1, q).toFloat();
         found = true;
         break;
@@ -111,12 +112,12 @@ void SerialCommand::ReadData()
   }
 
   if ( ! found ) {
-    Reset();
+    reset();
     return;
   }
 }
     
-void SerialCommand::Reset() {
+void SerialCommand::reset() {
   cmd_string      = "";
   reading_message = false;
   curr_pos        = 0;

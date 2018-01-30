@@ -1,3 +1,4 @@
+#include "encoder_driver.h"
 #include "teleop_controller.h"
 #include "motor_velocity_controller.h"
 #include "zombie_mode.h"
@@ -42,8 +43,6 @@
 #define LEFT_ENCODER_CS_PIN  3
 #define RIGHT_ENCODER_CS_PIN 4
 
-// what's the name of the hardware serial port for the GPS?
-#define GPSSerial Serial1
 
 /************************************** CONFIG *************************************/
 
@@ -54,7 +53,23 @@
 #define ENCODER_COUNTS_PER_REV 22000
 #define WHEEL_RADIUS 7
 
+/************************************ SERIAL SETUP **********************************/
+
+// invoke the serials in ESP32
+HardwareSerial Serial1(1); // pin 12=RX, pin 13=TX
+#define SERIAL1_RXPIN 12
+#define SERIAL1_TXPIN 13
+
+HardwareSerial Serial2(2); // pin 16=RX, pin 17=TX
+
+// what's the name of the hardware serial port for the GPS?
+#define GPSSerial Serial2
+
+// what's the name of the hardware serial port for the Sabertooth?
+#define MotorSerial Serial1
+
 /***********************************************************************************/
+
 
 #define LEFT_MOTOR_ID  0
 #define RIGHT_MOTOR_ID 1
@@ -79,11 +94,10 @@ class AlexbotController
         // Seperate function for initialising objects
         // In Arduino, these init calls do not work from the class constructor
 
-        // Initialise 9600 baud communication with the Sabertooth Motor Controller
-        SoftwareSerial ST25port(NOT_A_PIN, 2);  // RX on no pin (unused), TX on pin 2 (to S1).
-        ST32port.begin(9600);
-
-        sabertooth = new SabertoothSimplified(ST25port);
+        // TODO: MOVE ALL OF THESE "new" (dynamic creation) to global variables to prevent "strange things happening"
+        // this keeps the heap unfragmented
+        // https://arduino.stackexchange.com/a/17966
+        sabertooth = new SabertoothSimplified(MotorSerial);
 
         // Initialise Wheel Encoders
         left_encoder = new WheelEncoderLS7366(LEFT_MOTOR_ID, LEFT_ENCODER_CS_PIN, ENCODER_COUNTS_PER_REV, WHEEL_RADIUS);
@@ -121,15 +135,15 @@ class AlexbotController
             case HALT_STATE:
                 // We are in HALT_STATE
 
-                x_velocity = 0.0;
-                theta = 0.0;
-
                 break;
 
-            case RC_TELEOP_STATE:
+            case BLUETOOTH_TELEOP_STATE:
             {
                 // We are in RC_TELEOP_STATE
                 // Lets act according to the PWM input commands from the RC reciever
+
+                double left_vel_desired = 0.0;
+                double right_vel_desired = 0.0;
 
                 Serial.print(", desired_left=");
                 Serial.print(left_vel_desired);
@@ -158,13 +172,13 @@ class AlexbotController
         switch (new_state_id)
         {
             case HALT_STATE:
-                // Do nothing on transition into HALT
+                // Do nothing on transition into HALT_STATE
                 break;
-            case RC_TELEOP_STATE:
-                // Do nothing on transition into RC_TELEOP
+            case BLUETOOTH_TELEOP_STATE:
+                // Do nothing on transition into BLUETOOTH_TELEOP_STATE
                 break;
-            case AI_READY_STATE:
-                // Do nothing on transition into AI
+            case SERIAL_COMMAND_STATE:
+                // Do nothing on transition into SERIAL_COMMAND_STATE
                 break;
         }
 
@@ -225,12 +239,11 @@ class AlexbotController
 private:
     int current_state_id;
     long last_command_timestamp;
-    Servo throttle_servo;
 
     SabertoothSimplified *sabertooth;
 
-    MotorController *left_motor;
-    MotorController *right_motor;
+    MotorVelocityController *left_motor;
+    MotorVelocityController *right_motor;
 
     WheelEncoderLS7366 *left_encoder;
     WheelEncoderLS7366 *right_encoder;

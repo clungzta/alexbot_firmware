@@ -6,7 +6,7 @@
 #define EWMA_ALPHA 1.0
 
 // TAU = 2*PI (defining this saves some floating point operations)
-#define TAU = 6.28318530718
+#define TAU 6.28318530718
 
 // Max duration between position readings for a the velocity calculation to be considered valid
 #define VELOCITY_CALCULATION_TIMEOUT 200 //ms
@@ -29,7 +29,7 @@ struct WheelEncoderFeedback
     double distance_travelled;
     double velocity;
     bool velocity_is_valid;
-}
+};
 
 class WheelEncoderLS7366
 {
@@ -39,29 +39,31 @@ class WheelEncoderLS7366
         void reset_encoder();
 
     private:
-        long _request_encoder_position();
-        uint8_t _encoder_id;
-        uint8_t _chip_select_pin;
-        double _counts_per_rev;
-        double _wheel_diameter;
-        long _prev_count;
-        long _latest_count;
-        unsigned long _prev_stamp;
-        double _filtered_vel;
+        long request_encoder_position_();
+        uint8_t encoder_id_;
+        uint8_t chip_select_pin_;
+        double counts_per_rev_;
+        double wheel_radius_;
+        long prev_count_;
+        long latest_count_;
+        unsigned long prev_stamp_;
+        unsigned long latest_stamp_;
+        double filtered_vel_;
 };
 
 WheelEncoderLS7366::WheelEncoderLS7366(uint8_t encoder_id, uint8_t chip_select_pin, double counts_per_rev, double wheel_radius)
 {
     // init the motor controller here
-    this->_encoder_id      = encoder_id;
-    this->_chip_select_pin = chip_select_pin;
-    this->_counts_per_rev  = counts_per_rev;
-    this->_wheel_radius    = wheel_radius;
-    this->_prev_count      = 0;
-    this->_latest_count    = 0;
-    this->_filtered_vel    = 0.0;
-    this->_prev_stamp      = 0.0;
-    this->_latest_stamp    = 0.0;
+    this->encoder_id_      = encoder_id;
+    this->chip_select_pin_ = chip_select_pin;
+    this->counts_per_rev_  = counts_per_rev;
+    this->wheel_radius_    = wheel_radius;
+    this->prev_count_      = 0;
+    this->latest_count_    = 0;
+    this->prev_stamp_      = 0.0;
+    this->latest_stamp_    = 0.0;
+    this->filtered_vel_    = 0.0;
+    reset_encoder();
 }
 
 /**
@@ -71,26 +73,26 @@ WheelEncoderLS7366::WheelEncoderLS7366(uint8_t encoder_id, uint8_t chip_select_p
  */
 WheelEncoderFeedback WheelEncoderLS7366::get_update()
 {
-    feedback WheelEncoderFeedback;
-    feedback.raw_count = _request_encoder_position()
+    WheelEncoderFeedback feedback;
+    feedback.raw_count = request_encoder_position_();
 
-    feedback.distance_travelled = (double(feedback.raw_count) / this->counts_per_rev) * TAU * this->_wheel_radius;
-    double distance_travelled_prev = (double(this->_prev_count) / this->counts_per_rev) * TAU * this->_wheel_radius;
+    feedback.distance_travelled = (double(feedback.raw_count) / counts_per_rev_) * TAU * wheel_radius_;
+    double distance_travelled_prev = (double(prev_count_) / counts_per_rev_) * TAU * wheel_radius_;
 
-    double t_delta = double(this->_latest_stamp - this->_prev_stamp);
+    double t_delta = double(latest_stamp_ - prev_stamp_);
     double x_delta = feedback.distance_travelled - distance_travelled_prev;
 
     feedback.velocity_is_valid = (t_delta <= VELOCITY_CALCULATION_TIMEOUT);
-    this->_filtered_vel = EWMA_ALPHA * (x_delta / t_delta) + (1.0 - EWMA_ALPHA) * this->_filtered_vel;
-    feedback.velocity = this->_filtered_vel;
+    filtered_vel_ = EWMA_ALPHA * (x_delta / t_delta) + (1.0 - EWMA_ALPHA) * filtered_vel_;
+    feedback.velocity = filtered_vel_;
 
-    Serial.print('Encoder ');
-    Serial.print(_encoder_id); 
-    Serial.print(' distance_travelled: ');
+    Serial.print("Encoder ");
+    Serial.print(encoder_id_); 
+    Serial.print(" distance_travelled: ");
     Serial.print(feedback.distance_travelled);
-    Serial.print('m, velocity: ');
+    Serial.print("m, velocity: ");
     Serial.print(feedback.velocity);
-    Serial.print(' vel calc valid: ');
+    Serial.print(" vel calc valid: ");
     Serial.println(feedback.velocity_is_valid);
 
     return feedback;
@@ -101,29 +103,30 @@ WheelEncoderFeedback WheelEncoderLS7366::get_update()
  * 
  * @return long, raw encoder ticks
  */
-long WheelEncoderLS7366::_get_current_position()
+long WheelEncoderLS7366::request_encoder_position_()
 {
-    digitalWrite(_chip_select_pin, HIGH);
+    digitalWrite(chip_select_pin_, HIGH);
 
-    SPI.transfer(0x60);               // Request count
-    count1Value = SPI.transfer(0x00); // Read highest order byte
-    count2Value = SPI.transfer(0x00);
-    count3Value = SPI.transfer(0x00);
-    count4Value = SPI.transfer(0x00); // Read lowest order byte
+    SPI.transfer(0x60); // Request count
 
-    digitalWrite(_chip_select_pin, LOW);
+    unsigned int count1_val = SPI.transfer(0x00); // Read highest order byte
+    unsigned int count2_val = SPI.transfer(0x00);
+    unsigned int count3_val = SPI.transfer(0x00);
+    unsigned int count4_val = SPI.transfer(0x00); // Read lowest order byte
 
-    this->_prev_stamp = this->_latest_stamp;
-    this->_latest_stamp = millis();
+    digitalWrite(chip_select_pin_, LOW);
 
-    this->_prev_count = this->_latest_count;
-    this->_latest_count = ((long)count1Value << 24) + ((long)count2Value << 16) + ((long)count3Value << 8) + (long)count4Value;
-    return this->_latest_count;
+    prev_stamp_ = latest_stamp_;
+    latest_stamp_ = millis();
+
+    prev_count_ = latest_count_;
+    latest_count_ = ((long)count1_val << 24) + ((long)count2_val << 16) + ((long)count3_val << 8) + (long)count4_val;
+    return latest_count_;
 }
 
-void reset_encoder(int i)
+void WheelEncoderLS7366::reset_encoder()
 {
-    digitalWrite(_chip_select_pin, HIGH);
+    digitalWrite(chip_select_pin_, HIGH);
     SPI.transfer(CLR | CNTR);
-    digitalWrite(_chip_select_pin, LOW);
+    digitalWrite(chip_select_pin_, LOW);
 }
