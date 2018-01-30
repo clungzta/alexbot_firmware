@@ -65,7 +65,7 @@ Appropriate velocity Commands are generated and sent to the AssistedTeleopContro
 For localisation when the robot is within 3m visual LOS of the docking station. This allows to determine the angle of the docking station. Three IR (38KHz) LEDs are placed on the dock, namely “LEFT”, “MIDDLE” and “RIGHT”. IR receiver(s) are placed on the outer extremities of the robot (where appropriate, NOTE: More recievers results in greater FOV)
 
 Synced by a short sync pulse (from all IR transmitters), followed by single pulses from the LEFT, MIDDLE, then RIGHT respectively. See timing diagram:
-![alt text](https://photos.app.goo.gl/DKFhUayQKq2sYl8x1 "IR Timing Diagram")
+![alt text](https://i.imgur.com/I7CgXhO.jpg "IR Timing Diagram")
 
 Replication of XR-210 protocol as detailed by (Smith, 2010)
 https://sites.google.com/site/mechatronicsguy/robot-vac-hack .
